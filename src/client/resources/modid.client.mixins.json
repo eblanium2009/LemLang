@@ -3,7 +3,9 @@
 	"package": "com.example.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ExampleClientMixin"
+		"LanguageManagerAccessor",
+		"LanguageManagerMixin",
+		"I18nAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

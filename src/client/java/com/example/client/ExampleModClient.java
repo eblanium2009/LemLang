@@ -1,10 +1,94 @@
 package com.example.client;
 
+import com.example.client.config.ModConfig;
+import com.example.client.config.SwitchMode;
+import com.example.client.mixin.LanguageManagerAccessor;
+import com.example.client.mixin.I18nAccessor;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.resource.language.LanguageDefinition;
+import net.minecraft.client.resource.language.TranslationStorage;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.Language;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class ExampleModClient implements ClientModInitializer {
-	@Override
-	public void onInitializeClient() {
-		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
-	}
+    private static KeyBinding languageSwitchKey;
+    public static boolean isSecondaryActive = false;
+
+    public static TranslationStorage primaryLanguageStorage;
+    public static TranslationStorage secondaryLanguageStorage;
+
+    @Override
+    public void onInitializeClient() {
+        ModConfig.load();
+
+        languageSwitchKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.instant_language_switcher.switch",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_LEFT_ALT,
+                "category.instant_language_switcher.general"
+        ));
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            boolean isPressed = languageSwitchKey.isPressed();
+            boolean stateChanged = false;
+
+            if (ModConfig.switchMode == SwitchMode.HOLD) {
+                if (isPressed != isSecondaryActive) {
+                    isSecondaryActive = isPressed;
+                    stateChanged = true;
+                }
+            } else if (ModConfig.switchMode == SwitchMode.TOGGLE) {
+                while (languageSwitchKey.wasPressed()) {
+                    isSecondaryActive = !isSecondaryActive;
+                    stateChanged = true;
+                }
+            }
+
+            if (stateChanged) {
+                updateActiveLanguage();
+            }
+        });
+    }
+
+    public static void updateActiveLanguage() {
+        TranslationStorage active = isSecondaryActive && secondaryLanguageStorage != null ? secondaryLanguageStorage : primaryLanguageStorage;
+        if (active != null) {
+            Language.setInstance(active);
+            I18nAccessor.setLanguage(active);
+        }
+    }
+
+    public static void reloadSecondaryLanguage() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getResourceManager() == null || client.getLanguageManager() == null) {
+            return;
+        }
+
+        List<String> list = new ArrayList<>();
+        list.add("en_us");
+        boolean rightToLeft = false;
+
+        if (!ModConfig.secondaryLanguage.equals("en_us")) {
+            list.add(ModConfig.secondaryLanguage);
+
+            LanguageManagerAccessor accessor = (LanguageManagerAccessor) client.getLanguageManager();
+            Map<String, LanguageDefinition> defs = accessor.getLanguageDefs();
+            LanguageDefinition def = defs.get(ModConfig.secondaryLanguage);
+            if (def != null) {
+                rightToLeft = def.rightToLeft();
+            }
+        }
+
+        secondaryLanguageStorage = TranslationStorage.load(client.getResourceManager(), list, rightToLeft);
+        updateActiveLanguage();
+    }
 }

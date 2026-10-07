@@ -1,0 +1,14 @@
+package com.example.client.mixin;
+
+import net.minecraft.client.resource.language.LanguageDefinition;
+import net.minecraft.client.resource.language.LanguageManager;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+import java.util.Map;
+
+@Mixin(LanguageManager.class)
+public interface LanguageManagerAccessor {
+    @Accessor("languageDefs")
+    Map<String, LanguageDefinition> getLanguageDefs();
+}
