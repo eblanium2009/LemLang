@@ -5,7 +5,10 @@
 	"client": [
 		"LanguageManagerAccessor",
 		"LanguageManagerMixin",
-		"I18nAccessor"
+		"I18nAccessor",
+		"ItemStackMixin",
+
+		"TranslatableTextContentMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

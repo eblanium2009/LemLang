@@ -42,26 +42,35 @@ public class ExampleModClient implements ClientModInitializer {
                 boolean isHeld = languageSwitchKey.isPressed();
                 if (isHeld && !isSecondaryActive) {
                     isSecondaryActive = true;
-                    updateActiveLanguage();
+                    updateActiveLanguage(client);
                 } else if (!isHeld && isSecondaryActive) {
                     isSecondaryActive = false;
-                    updateActiveLanguage();
+                    updateActiveLanguage(client);
                 }
             } else if (ModConfig.switchMode == SwitchMode.TOGGLE) {
                 while (languageSwitchKey.wasPressed()) {
                     isSecondaryActive = !isSecondaryActive;
-                    updateActiveLanguage();
+                    updateActiveLanguage(client);
                 }
             }
         });
     }
 
-    public static void updateActiveLanguage() {
+    public static void updateActiveLanguage(MinecraftClient client) {
         TranslationStorage active = isSecondaryActive && secondaryLanguageStorage != null ? secondaryLanguageStorage : primaryLanguageStorage;
         if (active != null) {
             Language.setInstance(active);
             I18nAccessor.setLanguage(active);
+
+            if (client != null && client.currentScreen != null) {
+                // Force re-initialization of the active screen without closing it
+                client.currentScreen.resize(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
+            }
         }
+    }
+
+    public static void updateActiveLanguage() {
+        updateActiveLanguage(MinecraftClient.getInstance());
     }
 
     public static void reloadSecondaryLanguage() {
