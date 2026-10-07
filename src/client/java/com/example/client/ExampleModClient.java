@@ -38,23 +38,20 @@ public class ExampleModClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            boolean isPressed = languageSwitchKey.isPressed();
-            boolean stateChanged = false;
-
             if (ModConfig.switchMode == SwitchMode.HOLD) {
-                if (isPressed != isSecondaryActive) {
-                    isSecondaryActive = isPressed;
-                    stateChanged = true;
+                boolean isHeld = languageSwitchKey.isPressed();
+                if (isHeld && !isSecondaryActive) {
+                    isSecondaryActive = true;
+                    updateActiveLanguage();
+                } else if (!isHeld && isSecondaryActive) {
+                    isSecondaryActive = false;
+                    updateActiveLanguage();
                 }
             } else if (ModConfig.switchMode == SwitchMode.TOGGLE) {
                 while (languageSwitchKey.wasPressed()) {
                     isSecondaryActive = !isSecondaryActive;
-                    stateChanged = true;
+                    updateActiveLanguage();
                 }
-            }
-
-            if (stateChanged) {
-                updateActiveLanguage();
             }
         });
     }
