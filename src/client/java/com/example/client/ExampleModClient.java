@@ -38,39 +38,38 @@ public class ExampleModClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            boolean changed = false;
             if (ModConfig.switchMode == SwitchMode.HOLD) {
                 boolean isHeld = languageSwitchKey.isPressed();
                 if (isHeld && !isSecondaryActive) {
                     isSecondaryActive = true;
-                    updateActiveLanguage(client);
+                    updateActiveLanguage();
+                    changed = true;
                 } else if (!isHeld && isSecondaryActive) {
                     isSecondaryActive = false;
-                    updateActiveLanguage(client);
+                    updateActiveLanguage();
+                    changed = true;
                 }
             } else if (ModConfig.switchMode == SwitchMode.TOGGLE) {
                 while (languageSwitchKey.wasPressed()) {
                     isSecondaryActive = !isSecondaryActive;
-                    updateActiveLanguage(client);
+                    updateActiveLanguage();
+                    changed = true;
                 }
+            }
+
+            if (changed && MinecraftClient.getInstance().currentScreen != null) {
+                client.currentScreen.resize(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
             }
         });
     }
 
-    public static void updateActiveLanguage(MinecraftClient client) {
+    public static void updateActiveLanguage() {
         TranslationStorage active = isSecondaryActive && secondaryLanguageStorage != null ? secondaryLanguageStorage : primaryLanguageStorage;
         if (active != null) {
             Language.setInstance(active);
             I18nAccessor.setLanguage(active);
-
-            if (client != null && client.currentScreen != null) {
-                // Force re-initialization of the active screen without closing it
-                client.currentScreen.resize(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
-            }
         }
-    }
-
-    public static void updateActiveLanguage() {
-        updateActiveLanguage(MinecraftClient.getInstance());
     }
 
     public static void reloadSecondaryLanguage() {
